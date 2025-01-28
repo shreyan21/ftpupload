@@ -47,7 +47,7 @@ app.post('/add', upload.single('file'), async (req, res) => {
 
 
 })
-// Below is a get request
+
 app.get('/show/:filename',async(req,res)=>{
   try{
         const client=new Client()
