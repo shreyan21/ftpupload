@@ -29,7 +29,7 @@ if(!fs.existsSync(dirPath)){
 
 const upload = multer({ storage })
 
-app.post('/add', upload.single('file'), async (req, res) => {
+app.post('/addfile', upload.single('file'), async (req, res) => {
   try {
     const client = new Client()
     await client.access(ftp_config)
@@ -50,7 +50,7 @@ app.post('/add', upload.single('file'), async (req, res) => {
 
 
 
-app.get('/show/:filename',async(req,res)=>{
+app.get('/showfile/:filename',async(req,res)=>{
   try{
         const client=new Client()
         await client.access(ftp_config)
