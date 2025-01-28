@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config()
 const app = express()
 const ftp_config = {
-  host: '160.25.62.184',
-  user: 'docadmin',
+  
+  
   password: `${process.env.PASSWORD}`
 }
 const storage = multer.diskStorage({
