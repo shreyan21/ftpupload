@@ -1,76 +1,58 @@
-import express from "express"
-import multer from "multer"
+import express from 'express'
 import dotenv from 'dotenv'
 import path from 'path'
+import FTP from 'basic-ftp'
+import { fileURLToPath } from 'url'
+import multer from 'multer'
 import fs from 'fs'
-import { Client } from "basic-ftp"
-import { fileURLToPath } from "url"
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 dotenv.config()
 const app = express()
-const ftp_config = {
-  
-  
-  password: `${process.env.PASSWORD}`
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const folderpath=path.join(__dirname,'uploads/')
+if (!fs.existsSync(folderpath)) {
+      fs.mkdirSync(folderpath)
+}
+const config = {
+    user: `${process.env.USER}`,
+    host: `${process.env.HOST}`,
+    password: `${process.env.PASSWORD}`
 }
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname,'uploads'))
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname))
-  }
+    filename: (req, file, cb) => {
+        
+        cb(null, file.originalname)
+    },
+    destination: (req, file, cb) => {
+        cb(null, folderpath)
+    }
 })
-const dirPath=path.join(__dirname,'uploads')
-if(!fs.existsSync(dirPath)){
-  fs.mkdirSync(dirPath)
-}
 
 const upload = multer({ storage })
 
 app.post('/addfile', upload.single('file'), async (req, res) => {
-  try {
-    const client = new Client()
-    await client.access(ftp_config)
-    const localfilepath = path.join(__dirname, 'uploads', req.file.filename)
-    const remotefilepath = `/files/${req.file.originalname}`
+    const client = new FTP.Client()
+    await client.access(config)
+    const localfilepath = path.join(folderpath, req.file.filename)
+    const remotefilepath = `/files/${req.file.filename}`
     await client.uploadFrom(localfilepath, remotefilepath)
+
     fs.unlinkSync(localfilepath)
     client.close()
-    return res.status(200).json({message:'File send succesfully'})
-  }
-  catch (e) {
-    return res.status(500).json({message:e})
-
-  }
-
-
+    return res.status(200).json({ message: 'File uploaded to ftp server successfully' })
 })
 
-
-
-
-app.get('/showfile/:filename',async(req,res)=>{
-  try{
-        const client=new Client()
-        await client.access(ftp_config)
-        const localfilepath=path.join(__dirname,'public',req.params.filename)
-        const remotefilepath=path.join(`files/${req.params.filename}`)
-        await client.downloadTo(localfilepath,remotefilepath)
-         client.close()
-        res.status(200).sendFile(localfilepath)
-        res.on('finish',()=>{
-          fs.unlinkSync(localfilepath)
-          console.log('File successfully deleted');
-          
-        })
-  }
-  catch(e){
-  return res.status(500).json({message:e})
-  }
+app.get('/showfiles',async(req,res)=>{
+    const client=new FTP.Client()
+    await client.access(config)
+    const data=await client.list('/files')
+    // const localfilepath=path.join(folderpath,req.file.originalname)
+    // for (const file of data) {
+    //     await client.downloadTo(localfilepath,path.join('files/',file))
+    // }
+//    fs.unlinkSync(localfilepath)
+   client.close()
+   return res.status(200).json({file:data})
 })
-app.listen(4000,()=>{
-  console.log(`Server listening on port 4000`);
-  
-})
+
+app.listen(4000)
